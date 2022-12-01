@@ -4,13 +4,14 @@ import os
 import sys
 import socket
 import time
+from time import sleep
 from _thread import *
 import traceback
 broker = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 broker.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
 try:
-	port = 4170 + int(sys.argv[1])
+	port = 5005+ int(sys.argv[1])
 
 	def clientthread():
 		while True:
@@ -25,7 +26,8 @@ try:
 					topic = message.decode().split(" ")[1]
 					
 					# Each topic should be created a directory in the file system
-					os.mkdir("broker"+str(port)+"/")
+					if not os.path.exists("broker"+str(port)+"/"):
+						os.mkdir("broker"+str(port)+"/")
 					os.mkdir("broker"+str(port)+"/"+topic)
 					# Create a log file for each broker
 					log_file = open("log" + str(port) +".txt", "a")
@@ -46,19 +48,29 @@ try:
 									broker_conns.append(conn)
 						#for i in broker_conns:
 							#i.sendmsg(["broker-create".encode(), "\n".encode(), topic.encode(), str(partition).encode()])		
-							
+	
+	def hbthread():
+		while True:
+			server_hb.sendmsg([str(port).encode()])
+			sleep(7)						
 				    
 	# Zookeeper-broker communication
 	server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-	server.connect(('localhost', 3750))
+	server.connect(('localhost', 3800))
 	server.send(str(port).encode())
-
+	sleep(1)
+	
+	server_hb = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+	server_hb.connect(('localhost', 3800))
+	server_hb.send("heartbeat".encode())
+	sleep(1)
+	start_new_thread(hbthread, ())
 	
 	print("Port: ", port)
 	broker.bind(('localhost', port))
 	broker.listen(100)
 
-	broker_ports = [4170,4171, 4172]
+	broker_ports = [5005,5006,5007]
 	broker_conns = []
 
 	start_new_thread(clientthread,())
@@ -118,15 +130,7 @@ try:
 						f.write("\n")
 						f.close()
 					conn.send("ACK".encode())
-				'''elif node == "broker-create":
-					node, topic, partition = message.decode()
-					path = "broker"+str(port)+"/"+topic+"/"+partition+".log"
-					if not os.path.exists(path):
-						f = open(path, "a")
-						f.write(offset, ":", msg)
-					else:
-						f.write(offset, ":", msg)
-					conn.send("ACK".encode())'''
+				
 	while True:
 		
 		try:
