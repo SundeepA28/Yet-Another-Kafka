@@ -7,7 +7,7 @@ from _thread import *
 import argparse
 
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-server.connect(("localhost", 3750))
+server.connect(("localhost", 3800))
 
 #topic = sys.argv[1]
 list_of_partitions = []
@@ -22,8 +22,8 @@ topic = args.topic
 offset = 0
 
 server.sendmsg(["consumer".encode(), "\n".encode(), topic.encode()])
-
-for i in range(3):
+partitions = int(server.recv(2048).decode())
+for i in range(partitions):
 	msg = server.recvmsg(2048)
 	print(msg)
 	meta = msg[0].decode().split('\n')
@@ -56,6 +56,7 @@ for i in range(len(list_of_partitions)):
 			if os.path.getsize(path) != 0:
 				
 				line = f.readline().decode().strip().split(":")
+				
 				len_line = len(":".join(line))
 				if(len(line)>1):
 					if(int(line[0]) == offset):
