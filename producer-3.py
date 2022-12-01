@@ -6,26 +6,38 @@ import socket
 from _thread import *
 from time import sleep
 import traceback
+import json
 
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-server.connect(("localhost", 3750))
+server.connect(("localhost", 3800))
 
 topic = sys.argv[1]
-offset = 0
-
+offset=0
+try:
+	with open("meta.json",'r') as file:
+		metalog=json.load(file)	
+		if(topic not in metalog.keys()):
+			offset=0
+		else:
+			offset=int(metalog[topic])+1
+except:
+	offset=0
+print(offset)
 def get_broker(partition, meta):
 	for x in meta:
 		if(x[0] == partition):
 			return x[1]
 			
 			
+		
 
 server.sendmsg(["producer".encode(), "\n".encode(), topic.encode()])
 # Get the mapping of partitions and their leaders
 #msg = server.recv(2048)
 list_of_partitions = []
 
-for i in range(3):
+partitions = int(server.recv(2048).decode())
+for i in range(partitions):
 	msg = server.recvmsg(2048)
 	print(msg)
 	meta = msg[0].decode().split('\n')
