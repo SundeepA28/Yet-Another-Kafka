@@ -19,6 +19,7 @@ try:
 		if(topic not in metalog.keys()):
 			offset=0
 		else:
+			
 			offset=int(metalog[topic])+1
 except:
 	offset=0
@@ -62,6 +63,9 @@ for i in range(len(list_of_partitions)):
 
 while True:
 	message = sys.stdin.readline()
+	with open("meta.json",'r') as file:
+		metalog=json.load(file)	
+		offset=int(metalog[topic])+1
 	print("Message: ", message)
 	letter = message.strip()[0]
 	partition = ord(letter) % len(list_of_partitions)
